@@ -7,6 +7,8 @@
 
 #include "usart_user.h"
 
+int uart2_done = 1;
+
 void usart2_init(void) {
 	// enable clock
 	RCC->APB1ENR |= RCC_APB1ENR_USART2EN;
@@ -14,15 +16,15 @@ void usart2_init(void) {
 	RCC->AHB1ENR |= RCC_AHB1ENR_DMA1EN;
 
 	// GPIO PA2
-	GPIOA->MODER &= ~GPIO_MODER_MODER2_0;
+	GPIOA->MODER &= ~GPIO_MODER_MODER2_0; // alternate function
 	GPIOA->MODER |= GPIO_MODER_MODER2_1;
 
-	GPIOA->OTYPER &= ~ GPIO_OTYPER_OT2;
+	GPIOA->OTYPER |= GPIO_OTYPER_OT2; // open-drain
 
 	GPIOA->OSPEEDR |= GPIO_OSPEEDER_OSPEEDR2_0;
 	GPIOA->OSPEEDR |= GPIO_OSPEEDER_OSPEEDR2_1;
 
-	GPIOA->PUPDR &= ~GPIO_PUPDR_PUPDR2_0;
+	GPIOA->PUPDR |= GPIO_PUPDR_PUPDR2_0; // pull-up
 	GPIOA->PUPDR &= ~GPIO_PUPDR_PUPDR2_1;
 
 	GPIOA->AFR[0] |= GPIO_AFRL_AFRL2_0;
@@ -43,4 +45,12 @@ void usart2_init(void) {
 	USART2->CR3 |= USART_CR3_DMAR;
 
 	USART2->CR1 |= USART_CR1_UE;
+
+	NVIC_EnableIRQ(USART2_IRQn); // global interrupt
+}
+
+void usart2_IRQHandler(void){
+	uart2_done = 1;
+	// clear TC flag
+	USART2->SR &= ~USART_SR_TC;
 }
